@@ -1,0 +1,192 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String           @id @default(uuid())
+  username       String           @unique
+  email          String           @unique
+  password_hash  String
+  avatar         String?          @db.LongText
+  bio            String?          @db.VarChar(160)
+  links          Json?            @default("[]")
+  banner         String?          @db.LongText
+  is_verified    Boolean          @default(false)
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @updatedAt
+  
+  emailTokens    EmailToken[]
+  posts          Post[]
+  stories        Story[]
+  storyLikes     StoryLike[]
+  storyViews     StoryView[]
+  likes          Like[]
+  comments       Comment[]
+  reposts        Repost[]
+  
+  followers      Follow[]         @relation("follower")
+  following      Follow[]         @relation("following")
+  
+  sentMessages   Message[]        @relation("sender")
+  receivedMessages Message[]      @relation("receiver")
+  
+  notifications  Notification[]   @relation("notification_owner")
+  triggeredNotifications Notification[] @relation("notification_actor")
+  
+  refreshTokens  RefreshToken[]
+}
+
+model EmailToken {
+  id         String   @id @default(uuid())
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  token      String   @unique
+  type       String   // "email_verify", "password_reset"
+  expires_at DateTime
+  used       Boolean  @default(false)
+}
+
+model Post {
+  id         String    @id @default(uuid())
+  user_id    String
+  user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  content    String    @db.VarChar(280)
+  media_url  String?   @db.LongText
+  is_pinned  Boolean   @default(false)
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  
+  likes      Like[]
+  comments   Comment[]
+  reposts    Repost[]
+}
+
+model Like {
+  id         String   @id @default(uuid())
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post_id    String
+  post       Post     @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  created_at DateTime @default(now())
+
+  @@unique([user_id, post_id])
+}
+
+model Repost {
+  id         String   @id @default(uuid())
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post_id    String
+  post       Post     @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  created_at DateTime @default(now())
+
+  @@unique([user_id, post_id])
+}
+
+model Comment {
+  id         String   @id @default(uuid())
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post_id    String
+  post       Post     @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  content    String   @db.VarChar(280)
+  created_at DateTime @default(now())
+}
+
+model Follow {
+  id           String   @id @default(uuid())
+  follower_id  String
+  follower     User     @relation("follower", fields: [follower_id], references: [id], onDelete: Cascade)
+  following_id String
+  following    User     @relation("following", fields: [following_id], references: [id], onDelete: Cascade)
+  created_at   DateTime @default(now())
+
+  @@unique([follower_id, following_id])
+}
+
+model Message {
+  id          String   @id @default(uuid())
+  sender_id   String
+  sender      User     @relation("sender", fields: [sender_id], references: [id], onDelete: Cascade)
+  receiver_id String
+  receiver    User     @relation("receiver", fields: [receiver_id], references: [id], onDelete: Cascade)
+  content     String   @db.Text
+  is_read     Boolean  @default(false)
+  created_at  DateTime @default(now())
+}
+
+model Notification {
+  id           String   @id @default(uuid())
+  user_id      String
+  user         User     @relation("notification_owner", fields: [user_id], references: [id], onDelete: Cascade)
+  actor_id     String
+  actor        User     @relation("notification_actor", fields: [actor_id], references: [id], onDelete: Cascade)
+  type         String   // "like", "comment", "follow", "mention"
+  reference_id String?  // id of the post or comment
+  is_read      Boolean  @default(false)
+  created_at   DateTime @default(now())
+}
+
+model RefreshToken {
+  id         String   @id @default(uuid())
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  token      String   @unique
+  expires_at DateTime
+  revoked    Boolean  @default(false)
+}
+
+model LoginAttempt {
+  id           String   @id @default(uuid())
+  ip_address   String
+  email        String
+  attempts     Int      @default(1)
+  locked_until DateTime?
+  updated_at   DateTime @updatedAt
+  
+  @@unique([ip_address, email])
+}
+
+model Story {
+  id         String   @id @default(uuid())
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  media_url  String?  @db.LongText
+  content    String?  @db.VarChar(280)
+  expires_at DateTime
+  created_at DateTime @default(now())
+
+  likes      StoryLike[]
+  views      StoryView[]
+}
+
+model StoryLike {
+  id         String   @id @default(uuid())
+  story_id   String
+  user_id    String
+  created_at DateTime @default(now())
+
+  story      Story    @relation(fields: [story_id], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([story_id, user_id])
+  @@map("story_likes")
+}
+
+model StoryView {
+  id         String   @id @default(uuid())
+  story_id   String
+  user_id    String
+  created_at DateTime @default(now())
+
+  story      Story    @relation(fields: [story_id], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([story_id, user_id])
+  @@map("story_views")
+}
