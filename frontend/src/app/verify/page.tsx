@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState, useRef } from 'react';
+import { Suspense, useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { api } from '@/lib/api';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
-export default function VerifyPage() {
+function VerifyContent() {
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
     const [message, setMessage] = useState('');
     const searchParams = useSearchParams();
@@ -74,5 +74,13 @@ export default function VerifyPage() {
                 )}
             </motion.div>
         </main>
+    );
+}
+
+export default function VerifyPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-background text-white flex justify-center items-center">Loading...</div>}>
+            <VerifyContent />
+        </Suspense>
     );
 }

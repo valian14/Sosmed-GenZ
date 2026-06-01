@@ -1,13 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
-import DOMPurify from 'dompurify';
-import { JSDOM } from 'jsdom';
 
-const window = new JSDOM('').window;
-const purify = DOMPurify(window as any);
+const escapeHtml = (unsafe: string) => {
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+};
 
 const sanitizeObject = (obj: any): any => {
     if (typeof obj === 'string') {
-        return purify.sanitize(obj);
+        return escapeHtml(obj);
     }
     if (Array.isArray(obj)) {
         return obj.map(sanitizeObject);

@@ -104,7 +104,7 @@ export const login = async (req: Request, res: Response) => {
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
@@ -112,9 +112,9 @@ export const login = async (req: Request, res: Response) => {
             accessToken,
             user: { id: user.id, username: user.username, avatar: user.avatar, bio: user.bio }
         });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Server error' });
+    } catch (error: any) {
+        console.error("Login Error details:", error);
+        res.status(500).json({ error: error.message || 'Server error' });
     }
 };
 
@@ -203,7 +203,7 @@ export const getRefreshToken = async (req: Request, res: Response) => {
         res.cookie('refreshToken', tokens.refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
 

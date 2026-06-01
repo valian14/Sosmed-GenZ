@@ -4,17 +4,19 @@ import { useEffect, useState, useRef } from 'react';
 import { api } from '@/lib/api';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Send, Smile } from 'lucide-react';
+import { ArrowLeft, Send, Smile, Phone, Video } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import EmojiPicker, { Theme } from 'emoji-picker-react';
 import useAuthStore from '@/store/useAuthStore';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 // Note: Normally we'd use useSocketStore here if we set one up
 
 export default function ChatRoomPage({ params }: { params: { userId: string } }) {
     const { user } = useAuthStore();
     const router = useRouter();
+    const { toast } = useToast();
     const [partner, setPartner] = useState<any>(null);
     const [messages, setMessages] = useState<any[]>([]);
     const [content, setContent] = useState('');

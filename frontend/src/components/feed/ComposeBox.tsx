@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import useAuthStore from '@/store/useAuthStore';
+import usePostStore from '@/store/usePostStore';
 import { ImageIcon, SendHorizontal, X } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -19,6 +20,7 @@ type PostFormData = z.infer<typeof postSchema>;
 
 export default function ComposeBox({ onSuccess }: { onSuccess?: () => void }) {
     const { user } = useAuthStore();
+    const { addUploadingPost, updateUploadingPost, removeUploadingPost, addNewPost } = usePostStore();
     const [loading, setLoading] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -69,18 +71,50 @@ export default function ComposeBox({ onSuccess }: { onSuccess?: () => void }) {
 
     const onSubmit = async (data: PostFormData) => {
         setLoading(true);
+        const tempId = Date.now().toString();
+        addUploadingPost({ id: tempId, content: data.content, media_url: previewUrl, progress: 0 });
+
+        let currentProgress = 0;
+        const progressInterval = setInterval(() => {
+            currentProgress += (100 - currentProgress) * 0.08; // simulate slower progress curve
+            if (currentProgress > 90) currentProgress = 90;
+            updateUploadingPost(tempId, currentProgress);
+        }, 150);
+
         try {
             const payload = {
                 content: data.content,
                 media_url: previewUrl
             };
-            await api.post('/posts', payload);
+            const response = await api.post('/posts', payload);
+
+            clearInterval(progressInterval);
+
+            // Wait slightly before marking as 100% so users can see the progression
+            setTimeout(() => {
+                updateUploadingPost(tempId, 100);
+            }, 300);
+
             reset();
             setPreviewUrl(null);
             if (onSuccess) onSuccess();
-            // Socket will broadcast it
+
+            // Wait longer to show 100% state before turning into real post
+            setTimeout(() => {
+                removeUploadingPost(tempId);
+                const formattedPost = {
+                    ...response.data,
+                    likes: [],
+                    reposts: [],
+                    comments: [],
+                    _count: { likes: 0, comments: 0, reposts: 0 }
+                };
+                addNewPost(formattedPost);
+            }, 1500);
         } catch (error) {
             console.error(error);
+            clearInterval(progressInterval);
+            removeUploadingPost(tempId);
         } finally {
             setLoading(false);
         }
