@@ -2,17 +2,24 @@ import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-    port: parseInt(process.env.SMTP_PORT || '587', 10),
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-    },
-    tls: {
-        rejectUnauthorized: false
+let transporter: nodemailer.Transporter | null = null;
+
+const getTransporter = () => {
+    if (!transporter) {
+        transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST || 'smtp.ethereal.email',
+            port: parseInt(process.env.SMTP_PORT || '587', 10),
+            auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS,
+            },
+            tls: {
+                rejectUnauthorized: false
+            }
+        });
     }
-});
+    return transporter;
+};
 
 export const sendVerificationEmail = async (to: string, token: string) => {
     const verifyLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify?token=${token}`;
@@ -40,7 +47,7 @@ export const sendVerificationEmail = async (to: string, token: string) => {
             console.log('====================\n');
             return;
         }
-        const info = await transporter.sendMail(mailOptions);
+        const info = await getTransporter().sendMail(mailOptions);
         console.log('Verification email sent:', nodemailer.getTestMessageUrl(info));
     } catch (error) {
         console.error('Error sending email:', error);
