@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
+import { Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import Link from 'next/link';
@@ -28,6 +29,8 @@ export default function RegisterForm() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const { register, handleSubmit, formState: { errors } } = useForm<RegisterFormData>({
         resolver: zodResolver(registerSchema)
@@ -95,25 +98,43 @@ export default function RegisterForm() {
 
                     <div className="space-y-2">
                         <Label htmlFor="password" className="text-black font-bold">Password</Label>
-                        <Input
-                            id="password"
-                            type="password"
-                            placeholder="••••••••"
-                            {...register('password')}
-                            className="bg-secondary/50 border-white/20 text-black placeholder:text-gray-500 focus:border-cyan-500"
-                        />
+                        <div className="relative">
+                            <Input
+                                id="password"
+                                type={showPassword ? "text" : "password"}
+                                placeholder="••••••••"
+                                {...register('password')}
+                                className="bg-secondary/50 border-white/20 text-black placeholder:text-gray-500 focus:border-cyan-500 pr-10"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-cyan-500"
+                            >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
                         {errors.password && <p className="text-red-400 text-xs">{errors.password.message}</p>}
                     </div>
 
                     <div className="space-y-2">
                         <Label htmlFor="confirmPassword" className="text-black font-bold">Confirm Password</Label>
-                        <Input
-                            id="confirmPassword"
-                            type="password"
-                            placeholder="••••••••"
-                            {...register('confirmPassword')}
-                            className="bg-secondary/50 border-white/20 text-black placeholder:text-gray-500 focus:border-cyan-500"
-                        />
+                        <div className="relative">
+                            <Input
+                                id="confirmPassword"
+                                type={showConfirmPassword ? "text" : "password"}
+                                placeholder="••••••••"
+                                {...register('confirmPassword')}
+                                className="bg-secondary/50 border-white/20 text-black placeholder:text-gray-500 focus:border-cyan-500 pr-10"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-cyan-500"
+                            >
+                                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
                         {errors.confirmPassword && <p className="text-red-400 text-xs">{errors.confirmPassword.message}</p>}
                     </div>
 
