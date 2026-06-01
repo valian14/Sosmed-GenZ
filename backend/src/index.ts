@@ -6,20 +6,33 @@ import cookieParser from 'cookie-parser';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import postRoutes from './routes/post.routes';
 import messageRoutes from './routes/message.routes';
 import notificationRoutes from './routes/notification.routes';
+import prodEnv from './env.prod.json';
 
 dotenv.config();
+if (process.env.NODE_ENV === 'production') {
+    try {
+        Object.assign(process.env, prodEnv);
+    } catch (e) {
+        console.error('Failed to load env.prod.json:', e);
+    }
+}
 
 const app = express();
+app.set('trust proxy', 1);
 const httpServer = createServer(app);
 
 const allowedOrigins = [
     'http://localhost:3000', 'http://localhost:3001',
     'http://127.0.0.1:3000', 'http://127.0.0.1:3001',
+    'https://genzsosmed.vercel.app',
+    'https://calcinvestmu.vercel.app',
     process.env.FRONTEND_URL || ''
 ].filter(Boolean);
 
@@ -72,6 +85,10 @@ initSocketHandlers(io);
 
 const PORT = process.env.PORT || 5000;
 
-httpServer.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+    httpServer.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+}
+
+export default app;
